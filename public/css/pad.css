@@ -1,0 +1,26 @@
+
+#pad {
+  font-family: "Consolas", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace !important;
+  font-size: 1em;
+}
+
+#pad:focus {
+    outline: none;
+}
+
+.line {
+  height: 1em;
+}
+
+#cursor {
+  display: inline;
+  color: blue;
+  font-style: bold italic;
+  width: 1px;
+  height: 0.8em;
+  border-left: 1px solid #00f;
+}
+
+.char {
+  display: inline;
+}
