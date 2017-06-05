@@ -1,56 +1,75 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 )
 
+var messaging *Messaging
+var sessions map[string]Session
+
 func main() {
-	http.Handle("/", http.FileServer(http.Dir("public/")))
-	http.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Loading template at URL:", r.URL.Path)
-		var err error
-		t := template.New("index.html")
-		t, err = t.ParseFiles("views/index.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		err = t.Execute(w, nil)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	})
+	messaging = NewMessaging()
+	go messaging.Run()
+
+	sessions = make(map[string]Session)
+
+	http.HandleFunc("/index.html", Index)
 	http.HandleFunc("/poll", PollResponse)
 	http.HandleFunc("/push", PushHandler)
-	http.HandleFunc("/close", func(w http.ResponseWriter, r *http.Request) {
-		close(messages)
-	})
+	http.Handle("/", http.FileServer(http.Dir("public/")))
 
 	fmt.Println("Starting to listen on port 51936")
 	http.ListenAndServe(":51936", nil)
 }
 
-var messages chan string = make(chan string)
-
-func PollResponse(w http.ResponseWriter, req *http.Request) {
-	for msg := range messages {
-		io.WriteString(w, msg)
-	}
-}
-
-func PushHandler(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
+func Index(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Loading template at URL:", r.URL.Path)
+	var err error
+	t := template.New("index.html")
+	t, err = t.ParseFiles("views/index.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if msg, ok := req.Form["msg"]; ok {
-		messages <- string(msg[0])
+
+	c := make(chan Session)
+	messaging.SessionRequest <- c
+
+	session := <-c
+	sessions[session.Id] = session
+
+	fmt.Println("Started session: ", session.Id)
+
+	err = t.Execute(w, map[string]interface{}{
+		"SessionId": session.Id,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	http.Error(w, "msg is required", http.StatusBadRequest)
+}
+
+func PollResponse(w http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	// TODO: Validate
+	sessionId := req.Form["sessionId"][0]
+	session := messaging.GetSession(sessionId)
+	msg := <-session.Messages
+	content, _ := json.Marshal(msg)
+	io.WriteString(w, string(content))
+}
+
+func PushHandler(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	var e = message{}
+	err := decoder.Decode(&e)
+	if err != nil {
+		panic(err)
+	}
+	defer req.Body.Close()
+	messaging.Incoming <- e
 }
