@@ -34,11 +34,11 @@ $(function() {
   });
 
   editor.getSession().selection.on('changeSelection', function(e) {
-    console.log(editor.getSelectionRange());
+    // TODO: Use editor.getSelectionRange() to update selection shown.
   });
 
   editor.getSession().selection.on('changeCursor', function(e) {
-    console.log(editor.selection.getCursor());
+    // TODO: Use editor.selection.getCursor() to update cursor position
   });
 
   var pollUpdates = function() {
@@ -49,8 +49,12 @@ $(function() {
         sessionId: "" + sessionId,
         next: nextMessage,
       },
-      complete: function(result) {
-        events = JSON.parse(result.responseText);
+      success: function(result) {
+        events = JSON.parse(result);
+        if (!events) {
+          pollUpdates();
+          return;
+        }
         deltas = []
         for (i in events) {
           var e = events[i];
@@ -62,6 +66,16 @@ $(function() {
         ignoreCount = deltas.length;
         document.applyDeltas(deltas)
         nextMessage+=events.length;
+        pollUpdates();
+      },
+      error: function(result, text, errorThrown) {
+        if (result.readyState != 0) {
+          console.log("Poll cancelled");
+          return;
+        }
+        console.log("Error: " + text);
+        console.log(result);
+        console.log(errorThrown);
         pollUpdates();
       }
     });

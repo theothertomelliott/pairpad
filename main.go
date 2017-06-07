@@ -101,7 +101,16 @@ func PollResponse(w http.ResponseWriter, req *http.Request) {
 		messages = append(messages, msg)
 	}
 
-	content, _ := json.Marshal(messages)
+	if len(messages) == 0 {
+		io.WriteString(w, "[]")
+		return
+	}
+
+	content, err := json.Marshal(messages)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	io.WriteString(w, string(content))
 }
 

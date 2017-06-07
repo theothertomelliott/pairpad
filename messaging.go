@@ -26,6 +26,7 @@ func NewMessaging() *Messaging {
 }
 
 func (m *Messaging) Run() {
+	receiverTimeout := time.Tick(10 * time.Second)
 	for true {
 		select {
 		case msg := <-m.Incoming:
@@ -56,6 +57,11 @@ func (m *Messaging) Run() {
 			} else {
 				m.pendingRequests = append(m.pendingRequests, request)
 			}
+		case <-receiverTimeout: // Close all receivers to prevent long poll timeouts
+			for _, request := range m.pendingRequests {
+				close(request.Receiver)
+			}
+			m.pendingRequests = make([]MessageRequest, 0)
 		}
 
 	}
