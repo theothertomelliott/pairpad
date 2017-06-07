@@ -14,6 +14,8 @@ import (
 var messaging *Messaging
 var sessions map[string]Session
 
+var fileServer http.Handler
+
 func main() {
 	port := os.Getenv("PORT")
 
@@ -21,22 +23,27 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
+	fileServer = http.FileServer(http.Dir("public/"))
+
 	messaging = NewMessaging()
 	go messaging.Run()
 
 	sessions = make(map[string]Session)
 
-	http.HandleFunc("/index.html", Index)
 	http.HandleFunc("/poll", PollResponse)
 	http.HandleFunc("/push", PushHandler)
-	http.Handle("/", http.FileServer(http.Dir("public/")))
+	http.HandleFunc("/", Index)
 
 	fmt.Println("Starting to listen on port", port)
 	http.ListenAndServe(":"+port, nil)
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Loading template at URL:", r.URL.Path)
+	if r.URL.Path != "/" {
+		fileServer.ServeHTTP(w, r)
+		return
+	}
+
 	var err error
 	t := template.New("index.html")
 	t, err = t.ParseFiles("views/index.html")
