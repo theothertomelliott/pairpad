@@ -69,7 +69,8 @@ $(function() {
         pollUpdates();
       },
       error: function(result, text, errorThrown) {
-        if (result.readyState != 0) {
+        if (result.readyState == 0) {
+          // TODO: Display "connection lost" or similar
           console.log("Poll cancelled");
           return;
         }
