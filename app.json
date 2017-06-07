@@ -1,0 +1,12 @@
+{
+  "name": "Shared Pad",
+  "description": "A shared code editor for coding interviews",
+  "keywords": [
+    "interview",
+    "go"
+  ],
+  "image": "heroku/go:1.8",
+  "mount_dir": "src/github.com/theothertomelliott/sharedpad",
+  "website": "http://github.com/theothertomelliott/sharedpad",
+  "repository": "http://github.com/theothertomelliott/sharedpad"
+}
