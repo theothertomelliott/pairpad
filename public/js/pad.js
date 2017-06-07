@@ -2,19 +2,20 @@
  * Editing pad component
  */
 
-var ignoreEdit = false;
+var ignoreCount = 0;
 
 $(function() {
   var editor = ace.edit("editor");
   var sessionId = $("#editor").data("session");
+  var nextMessage = 0;
 
   editor.$blockScrolling = Infinity
   editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/javascript");
   var document = editor.getSession().getDocument();
   editor.on('change', function(e) {
-    if (ignoreEdit) {
-      ignoreEdit = false;
+    if (ignoreCount > 0) {
+      ignoreCount--;
       return;
     }
 
@@ -46,12 +47,21 @@ $(function() {
       type: "GET",
       data: {
         sessionId: "" + sessionId,
+        next: nextMessage,
       },
       complete: function(result) {
-        console.log("Poll response");
-        event = JSON.parse(result.responseText);
-        ignoreEdit = true;
-        document.applyDeltas(event.deltas);
+        events = JSON.parse(result.responseText);
+        deltas = []
+        for (i in events) {
+          var e = events[i];
+          if(e.sessionId == sessionId) {
+            continue;
+          }
+          deltas = deltas.concat(e.deltas)
+        }
+        ignoreCount = deltas.length;
+        document.applyDeltas(deltas)
+        nextMessage+=events.length;
         pollUpdates();
       }
     });

@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 var messaging *Messaging
@@ -55,11 +56,37 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func PollResponse(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	// TODO: Validate
-	sessionId := req.Form["sessionId"][0]
-	session := messaging.GetSession(sessionId)
-	msg := <-session.Messages
-	content, _ := json.Marshal(msg)
+
+	if s, ok := req.Form["sessionId"]; !ok || len(s) == 0 {
+		http.Error(w, "sessionId is required", http.StatusBadRequest)
+		return
+	}
+	if n, ok := req.Form["next"]; !ok || len(n) == 0 {
+		http.Error(w, "next message number is required", http.StatusBadRequest)
+		return
+	}
+
+	sessionID := req.Form["sessionId"][0]
+	nextMessageStr := req.Form["next"][0]
+	nextMessageInt, err := strconv.Atoi(nextMessageStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	receiver := make(chan *message)
+	messaging.MessageRequest <- MessageRequest{
+		FirstMessage: nextMessageInt,
+		SessionID:    sessionID,
+		Receiver:     receiver,
+	}
+
+	var messages []*message
+	for msg := range receiver {
+		messages = append(messages, msg)
+	}
+
+	content, _ := json.Marshal(messages)
 	io.WriteString(w, string(content))
 }
 

@@ -23,45 +23,64 @@ func TestGetSession(t *testing.T) {
 	}
 }
 
-func TestMessaging(t *testing.T) {
-	sessionCount := 3
+func TestMessageRequestCatchUp(t *testing.T) {
 	messaging := NewMessaging()
 	go messaging.Run()
-	var sessions []Session
-	for i := 0; i < sessionCount; i++ {
-		c := make(chan Session)
-		messaging.SessionRequest <- c
-		select {
-		case session := <-c:
-			sessions = append(sessions, session)
-		case <-time.After(1 * time.Second):
-			t.Errorf("Timed out waiting for session")
-		}
-	}
 
-	for _, session := range sessions {
+	for i := 0; i < 2; i++ {
 		messaging.Incoming <- message{
-			SessionId: session.Id,
-		}
-		for _, receiver := range sessions {
-			if receiver.Id == session.Id {
-				continue
-			}
-			select {
-			case m := <-receiver.Messages:
-				if m.SessionId != session.Id {
-					t.Error("SessionId not as expected")
-				}
-			case <-time.After(1 * time.Second):
-				t.Errorf("Timed out waiting for message from session %v, to session: %v", session.Id, receiver.Id)
-			}
-		}
-
-		select {
-		case _ = <-session.Messages:
-			t.Error("Session should not have received message")
-		default:
+			SessionID: "session",
 		}
 	}
 
+	receiver := make(chan *message)
+	messaging.MessageRequest <- MessageRequest{
+		FirstMessage: 0,
+		SessionID:    "another_session",
+		Receiver:     receiver,
+	}
+
+	var count int
+	for m := range receiver {
+		if m.SessionID != "session" {
+			t.Error("SessionId not as expected:", m.SessionID)
+		}
+		if m.MessageID != count {
+			t.Error("MessageId not as expected:", m.MessageID)
+		}
+		count++
+	}
+	if count != 2 {
+		t.Error("Expected two messages")
+	}
+}
+
+func TestMessageRequestPending(t *testing.T) {
+	messaging := NewMessaging()
+	go messaging.Run()
+
+	receiver := make(chan *message)
+	messaging.MessageRequest <- MessageRequest{
+		FirstMessage: 0,
+		SessionID:    "another_session",
+		Receiver:     receiver,
+	}
+
+	messaging.Incoming <- message{
+		SessionID: "session",
+	}
+
+	var count int
+	for m := range receiver {
+		if m.SessionID != "session" {
+			t.Error("SessionId not as expected:", m.SessionID)
+		}
+		if m.MessageID != count {
+			t.Error("MessageId not as expected:", m.MessageID)
+		}
+		count++
+	}
+	if count != 1 {
+		t.Error("Expected one message")
+	}
 }

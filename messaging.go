@@ -2,16 +2,18 @@ package main
 
 import (
 	"strconv"
-	"sync"
 	"time"
 )
 
 type Messaging struct {
-	StartTime      time.Time
-	Incoming       chan message
-	sessionsByName map[string]Session
-	sessionMtx     sync.Mutex
+	StartTime time.Time
+	Incoming  chan message
+
+	pendingRequests []MessageRequest
+	messageHistory  []message
+
 	SessionRequest chan chan Session
+	MessageRequest chan MessageRequest
 	nextSession    int
 }
 
@@ -19,32 +21,24 @@ func NewMessaging() *Messaging {
 	return &Messaging{
 		Incoming:       make(chan message),
 		SessionRequest: make(chan chan Session),
-		sessionsByName: make(map[string]Session),
+		MessageRequest: make(chan MessageRequest),
 	}
-}
-
-func (m *Messaging) GetSession(sessionId string) Session {
-	m.sessionMtx.Lock()
-	defer m.sessionMtx.Unlock()
-	return m.sessionsByName[sessionId]
 }
 
 func (m *Messaging) Run() {
 	for true {
 		select {
 		case msg := <-m.Incoming:
-			for index, delta := range msg.Deltas {
-				delta.TimeOffset = time.Since(m.StartTime)
-				msg.Deltas[index] = delta
+			msg.TimeOffset = time.Since(m.StartTime)
+			msg.MessageID = len(m.messageHistory)
+			for _, request := range m.pendingRequests {
+				request.Receiver <- &msg
+				close(request.Receiver)
 			}
-			m.sessionMtx.Lock()
-			for _, session := range m.sessionsByName {
-				if msg.SessionId != session.Id {
-					// TODO: Mark this session as failed if needed
-					session.Messages <- msg
-				}
-			}
-			m.sessionMtx.Unlock()
+			m.pendingRequests = make([]MessageRequest, 0)
+
+			m.messageHistory = append(m.messageHistory, msg)
+
 		case requestChan := <-m.SessionRequest:
 			newSession := Session{
 				Id:       strconv.Itoa(m.nextSession),
@@ -52,9 +46,25 @@ func (m *Messaging) Run() {
 			}
 			m.nextSession++
 			requestChan <- newSession
-			m.sessionsByName[newSession.Id] = newSession
+		case request := <-m.MessageRequest:
+			if request.FirstMessage < len(m.messageHistory) {
+				for _, msg := range m.messageHistory[request.FirstMessage:] {
+					msg := msg
+					request.Receiver <- &msg
+				}
+				close(request.Receiver)
+			} else {
+				m.pendingRequests = append(m.pendingRequests, request)
+			}
 		}
+
 	}
+}
+
+type MessageRequest struct {
+	FirstMessage int
+	SessionID    string
+	Receiver     chan *message
 }
 
 type Session struct {
@@ -68,14 +78,15 @@ type pos struct {
 }
 
 type delta struct {
-	Start      pos           `json:"start"`
-	End        pos           `json:"end"`
-	Lines      []string      `json:"lines"`
-	Action     string        `json:"action"`
-	TimeOffset time.Duration `json:"time"`
+	Start  pos      `json:"start"`
+	End    pos      `json:"end"`
+	Lines  []string `json:"lines"`
+	Action string   `json:"action"`
 }
 
 type message struct {
-	SessionId string
-	Deltas    []delta `json:"deltas"`
+	SessionID  string        `json:"sessionId"`
+	MessageID  int           `json:"messageId"`
+	TimeOffset time.Duration `json:"time"`
+	Deltas     []delta       `json:"deltas"`
 }
