@@ -2,6 +2,7 @@
     "comment": "For other heroku options see: https://devcenter.heroku.com/articles/go-dependencies-via-govendor#build-configuration",
     "rootPath": "github.com/theothertomelliott/sharedpad",
     "heroku": {
-        "sync": false
+        "sync": false,
+        "goVersion": "go1.8.3"
     }
 }

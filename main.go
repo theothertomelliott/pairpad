@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -13,6 +15,12 @@ var messaging *Messaging
 var sessions map[string]Session
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	messaging = NewMessaging()
 	go messaging.Run()
 
@@ -23,8 +31,8 @@ func main() {
 	http.HandleFunc("/push", PushHandler)
 	http.Handle("/", http.FileServer(http.Dir("public/")))
 
-	fmt.Println("Starting to listen on port 51936")
-	http.ListenAndServe(":51936", nil)
+	fmt.Println("Starting to listen on port", port)
+	http.ListenAndServe(":"+port, nil)
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
