@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -9,10 +10,11 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 )
 
-var messaging *Messaging
-var sessions map[string]Session
+var documents *Documents
 
 var fileServer http.Handler
 
@@ -25,13 +27,13 @@ func main() {
 
 	fileServer = http.FileServer(http.Dir("public/"))
 
-	messaging = NewMessaging()
-	go messaging.Run()
+	documents = NewDocuments()
+	go documents.Run()
 
-	sessions = make(map[string]Session)
-
-	http.HandleFunc("/poll", PollResponse)
-	http.HandleFunc("/push", PushHandler)
+	http.HandleFunc("/poll/", PollResponse)
+	http.HandleFunc("/push/", PushHandler)
+	http.HandleFunc("/document/new", NewDocumentHandler)
+	http.HandleFunc("/document/", DocumentHandler)
 	http.HandleFunc("/", Index)
 
 	fmt.Println("Starting to listen on port", port)
@@ -48,6 +50,39 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	t := template.New("index.html")
 	t, err = t.ParseFiles("views/index.html")
 	if err != nil {
+		fmt.Print(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		fmt.Print(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func NewDocumentHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := getNewDocumentID()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/document/%s", id), http.StatusFound)
+}
+
+func DocumentHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	documentID := strings.Replace(r.URL.Path, "/document/", "", 1)
+	messaging, err := getDocument(documentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	t := template.New("document.html")
+	t, err = t.ParseFiles("views/document.html")
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -56,12 +91,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	messaging.SessionRequest <- c
 
 	session := <-c
-	sessions[session.Id] = session
 
 	fmt.Println("Started session: ", session.Id)
 
 	err = t.Execute(w, map[string]interface{}{
-		"SessionId": session.Id,
+		"DocumentId": documentID,
+		"SessionId":  session.Id,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -70,8 +105,15 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func PollResponse(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
+	var err error
+	documentID := strings.Replace(req.URL.Path, "/poll/", "", 1)
+	messaging, err := getDocument(documentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	req.ParseForm()
 	if s, ok := req.Form["sessionId"]; !ok || len(s) == 0 {
 		http.Error(w, "sessionId is required", http.StatusBadRequest)
 		return
@@ -115,12 +157,48 @@ func PollResponse(w http.ResponseWriter, req *http.Request) {
 }
 
 func PushHandler(w http.ResponseWriter, req *http.Request) {
+	var err error
+	documentID := strings.Replace(req.URL.Path, "/push/", "", 1)
+	messaging, err := getDocument(documentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	decoder := json.NewDecoder(req.Body)
 	var e = message{}
-	err := decoder.Decode(&e)
+	err = decoder.Decode(&e)
 	if err != nil {
 		panic(err)
 	}
 	defer req.Body.Close()
 	messaging.Incoming <- e
+}
+
+func getNewDocumentID() (string, error) {
+	responseChan := make(chan NewDocumentResponse)
+	documents.New <- responseChan
+	select {
+	case response := <-responseChan:
+		return response.Id, nil
+	case <-time.After(1 * time.Second):
+		return "", errors.New("timed out waiting for new session")
+	}
+}
+
+func getDocument(id string) (*Messaging, error) {
+	request := DocumentRequest{
+		Id:       id,
+		Response: make(chan *Messaging),
+		Error:    make(chan error),
+	}
+	documents.Existing <- request
+	select {
+	case response := <-request.Response:
+		return response, nil
+	case err := <-request.Error:
+		return nil, err
+	case <-time.After(1 * time.Second):
+		return nil, errors.New("timed out waiting for existing session")
+	}
 }

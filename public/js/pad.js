@@ -7,6 +7,8 @@ var ignoreCount = 0;
 $(function() {
   var editor = ace.edit("editor");
   var sessionId = $("#editor").data("session");
+  var documentId = $("#editor").data("document");
+
   var nextMessage = 0;
 
   editor.$blockScrolling = Infinity
@@ -20,7 +22,7 @@ $(function() {
     }
 
     $.ajax({
-      url: "/push",
+      url: "/push/" + documentId,
       type: "POST",
       data: JSON.stringify({
         sessionId: "" + sessionId,
@@ -43,7 +45,7 @@ $(function() {
 
   var pollUpdates = function() {
     $.ajax({
-      url: "/poll",
+      url: "/poll/" + documentId,
       type: "GET",
       data: {
         sessionId: "" + sessionId,
@@ -77,7 +79,8 @@ $(function() {
         console.log("Error: " + text);
         console.log(result);
         console.log(errorThrown);
-        pollUpdates();
+        // Retry after 1s
+        setTimeout(pollUpdates, 1000);
       }
     });
   };
