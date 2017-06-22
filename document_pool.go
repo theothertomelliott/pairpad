@@ -6,21 +6,21 @@ import (
 	"strconv"
 )
 
-type Documents struct {
+type DocumentPool struct {
 	messaging map[string]*Messaging
 	New       chan chan NewDocumentResponse
 	Existing  chan DocumentRequest
 }
 
-func NewDocuments() *Documents {
-	return &Documents{
+func NewDocumentPool() *DocumentPool {
+	return &DocumentPool{
 		messaging: make(map[string]*Messaging),
 		New:       make(chan chan NewDocumentResponse),
 		Existing:  make(chan DocumentRequest),
 	}
 }
 
-func (m *Documents) Run() {
+func (m *DocumentPool) Run() {
 	for true {
 		select {
 		case msg := <-m.New:

@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var documents *Documents
+var documents *DocumentPool
 
 var fileServer http.Handler
 
@@ -27,7 +27,7 @@ func main() {
 
 	fileServer = http.FileServer(http.Dir("public/"))
 
-	documents = NewDocuments()
+	documents = NewDocumentPool()
 	go documents.Run()
 
 	http.HandleFunc("/poll/", PollResponse)
