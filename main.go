@@ -32,8 +32,8 @@ func main() {
 
 	http.HandleFunc("/poll/", PollResponse)
 	http.HandleFunc("/push/", PushHandler)
-	http.HandleFunc("/document/new", NewDocumentHandler)
-	http.HandleFunc("/document/", DocumentHandler)
+	http.HandleFunc("/doc/new", NewDocumentHandler)
+	http.HandleFunc("/doc/", DocumentHandler)
 	http.HandleFunc("/", Index)
 
 	fmt.Println("Starting to listen on port", port)
@@ -68,12 +68,12 @@ func NewDocumentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/document/%s", id), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/doc/%s", id), http.StatusFound)
 }
 
 func DocumentHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	documentID := strings.Replace(r.URL.Path, "/document/", "", 1)
+	documentID := strings.Replace(r.URL.Path, "/doc/", "", 1)
 	messaging, err := getDocument(documentID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
