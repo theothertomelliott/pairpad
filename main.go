@@ -186,10 +186,10 @@ func getNewDocumentID() (string, error) {
 	}
 }
 
-func getDocument(id string) (*Messaging, error) {
+func getDocument(id string) (*Document, error) {
 	request := DocumentRequest{
 		Id:       id,
-		Response: make(chan *Messaging),
+		Response: make(chan *Document),
 		Error:    make(chan error),
 	}
 	documents.Existing <- request

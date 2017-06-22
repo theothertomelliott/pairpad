@@ -7,14 +7,14 @@ import (
 )
 
 type DocumentPool struct {
-	messaging map[string]*Messaging
+	messaging map[string]*Document
 	New       chan chan NewDocumentResponse
 	Existing  chan DocumentRequest
 }
 
 func NewDocumentPool() *DocumentPool {
 	return &DocumentPool{
-		messaging: make(map[string]*Messaging),
+		messaging: make(map[string]*Document),
 		New:       make(chan chan NewDocumentResponse),
 		Existing:  make(chan DocumentRequest),
 	}
@@ -26,7 +26,7 @@ func (m *DocumentPool) Run() {
 		case msg := <-m.New:
 			fmt.Println("Request for new")
 			id := strconv.Itoa(len(m.messaging) + 1)
-			messaging := NewMessaging()
+			messaging := NewDocument()
 			go messaging.Run()
 			m.messaging[id] = messaging
 			msg <- NewDocumentResponse{
@@ -49,11 +49,11 @@ func (m *DocumentPool) Run() {
 
 type NewDocumentResponse struct {
 	Id       string
-	Document *Messaging
+	Document *Document
 }
 
 type DocumentRequest struct {
 	Id       string
-	Response chan *Messaging
+	Response chan *Document
 	Error    chan error
 }

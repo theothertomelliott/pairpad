@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetSession(t *testing.T) {
-	messaging := NewMessaging()
+	messaging := NewDocument()
 	go messaging.Run()
 	for i := 0; i < 10; i++ {
 		c := make(chan Session)
@@ -24,7 +24,7 @@ func TestGetSession(t *testing.T) {
 }
 
 func TestMessageRequestCatchUp(t *testing.T) {
-	messaging := NewMessaging()
+	messaging := NewDocument()
 	go messaging.Run()
 
 	for i := 0; i < 2; i++ {
@@ -56,7 +56,7 @@ func TestMessageRequestCatchUp(t *testing.T) {
 }
 
 func TestMessageRequestPending(t *testing.T) {
-	messaging := NewMessaging()
+	messaging := NewDocument()
 	go messaging.Run()
 
 	receiver := make(chan *message)

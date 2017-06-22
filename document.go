@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Messaging struct {
+type Document struct {
 	StartTime time.Time
 	Incoming  chan message
 
@@ -17,15 +17,15 @@ type Messaging struct {
 	nextSession    int
 }
 
-func NewMessaging() *Messaging {
-	return &Messaging{
+func NewDocument() *Document {
+	return &Document{
 		Incoming:       make(chan message),
 		SessionRequest: make(chan chan Session),
 		MessageRequest: make(chan MessageRequest),
 	}
 }
 
-func (m *Messaging) Run() {
+func (m *Document) Run() {
 	receiverTimeout := time.Tick(10 * time.Second)
 	for true {
 		select {
