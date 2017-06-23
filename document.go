@@ -6,6 +6,7 @@ import (
 
 type Document struct {
 	*Sessions
+	Chat *Chat
 
 	StartTime time.Time
 	Incoming  chan update
@@ -19,6 +20,7 @@ type Document struct {
 func NewDocument() *Document {
 	return &Document{
 		Sessions:      NewSessions(),
+		Chat:          NewChat(),
 		Incoming:      make(chan update),
 		UpdateRequest: make(chan UpdateRequest),
 	}
@@ -26,6 +28,7 @@ func NewDocument() *Document {
 
 func (m *Document) Run() {
 	go m.Sessions.Run()
+	go m.Chat.Run()
 
 	receiverTimeout := time.Tick(10 * time.Second)
 	for true {
@@ -37,7 +40,6 @@ func (m *Document) Run() {
 		case <-receiverTimeout: // Close all receivers to prevent long poll timeouts
 			m.handleTimeout()
 		}
-
 	}
 }
 
