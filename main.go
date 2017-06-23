@@ -131,14 +131,14 @@ func PollResponse(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	receiver := make(chan *message)
-	messaging.MessageRequest <- MessageRequest{
+	receiver := make(chan *update)
+	messaging.UpdateRequest <- UpdateRequest{
 		FirstMessage: nextMessageInt,
 		SessionID:    sessionID,
 		Receiver:     receiver,
 	}
 
-	var messages []*message
+	var messages []*update
 	for msg := range receiver {
 		messages = append(messages, msg)
 	}
@@ -166,7 +166,7 @@ func PushHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	decoder := json.NewDecoder(req.Body)
-	var e = message{}
+	var e = update{}
 	err = decoder.Decode(&e)
 	if err != nil {
 		panic(err)

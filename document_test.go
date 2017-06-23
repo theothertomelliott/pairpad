@@ -28,13 +28,13 @@ func TestMessageRequestCatchUp(t *testing.T) {
 	go messaging.Run()
 
 	for i := 0; i < 2; i++ {
-		messaging.Incoming <- message{
+		messaging.Incoming <- update{
 			SessionID: "session",
 		}
 	}
 
-	receiver := make(chan *message)
-	messaging.MessageRequest <- MessageRequest{
+	receiver := make(chan *update)
+	messaging.UpdateRequest <- UpdateRequest{
 		FirstMessage: 0,
 		SessionID:    "another_session",
 		Receiver:     receiver,
@@ -45,8 +45,8 @@ func TestMessageRequestCatchUp(t *testing.T) {
 		if m.SessionID != "session" {
 			t.Error("SessionId not as expected:", m.SessionID)
 		}
-		if m.MessageID != count {
-			t.Error("MessageId not as expected:", m.MessageID)
+		if m.UpdateID != count {
+			t.Error("UpdateID not as expected:", m.UpdateID)
 		}
 		count++
 	}
@@ -59,14 +59,14 @@ func TestMessageRequestPending(t *testing.T) {
 	messaging := NewDocument()
 	go messaging.Run()
 
-	receiver := make(chan *message)
-	messaging.MessageRequest <- MessageRequest{
+	receiver := make(chan *update)
+	messaging.UpdateRequest <- UpdateRequest{
 		FirstMessage: 0,
 		SessionID:    "another_session",
 		Receiver:     receiver,
 	}
 
-	messaging.Incoming <- message{
+	messaging.Incoming <- update{
 		SessionID: "session",
 	}
 
@@ -75,8 +75,8 @@ func TestMessageRequestPending(t *testing.T) {
 		if m.SessionID != "session" {
 			t.Error("SessionId not as expected:", m.SessionID)
 		}
-		if m.MessageID != count {
-			t.Error("MessageId not as expected:", m.MessageID)
+		if m.UpdateID != count {
+			t.Error("UpdateID not as expected:", m.UpdateID)
 		}
 		count++
 	}

@@ -1,81 +1,81 @@
 package main
 
 import (
-	"strconv"
 	"time"
 )
 
 type Document struct {
+	*Sessions
+
 	StartTime time.Time
-	Incoming  chan message
+	Incoming  chan update
 
-	pendingRequests []MessageRequest
-	messageHistory  []message
+	pendingRequests []UpdateRequest
+	updateHistory   []update
 
-	SessionRequest chan chan Session
-	MessageRequest chan MessageRequest
-	nextSession    int
+	UpdateRequest chan UpdateRequest
 }
 
 func NewDocument() *Document {
 	return &Document{
-		Incoming:       make(chan message),
-		SessionRequest: make(chan chan Session),
-		MessageRequest: make(chan MessageRequest),
+		Sessions:      NewSessions(),
+		Incoming:      make(chan update),
+		UpdateRequest: make(chan UpdateRequest),
 	}
 }
 
 func (m *Document) Run() {
+	go m.Sessions.Run()
+
 	receiverTimeout := time.Tick(10 * time.Second)
 	for true {
 		select {
 		case msg := <-m.Incoming:
-			msg.TimeOffset = time.Since(m.StartTime)
-			msg.MessageID = len(m.messageHistory)
-			for _, request := range m.pendingRequests {
-				request.Receiver <- &msg
-				close(request.Receiver)
-			}
-			m.pendingRequests = make([]MessageRequest, 0)
-
-			m.messageHistory = append(m.messageHistory, msg)
-
-		case requestChan := <-m.SessionRequest:
-			newSession := Session{
-				Id:       strconv.Itoa(m.nextSession),
-				Messages: make(chan message, 100), // TODO: Determine an appropriate buffer size
-			}
-			m.nextSession++
-			requestChan <- newSession
-		case request := <-m.MessageRequest:
-			if request.FirstMessage < len(m.messageHistory) {
-				for _, msg := range m.messageHistory[request.FirstMessage:] {
-					msg := msg
-					request.Receiver <- &msg
-				}
-				close(request.Receiver)
-			} else {
-				m.pendingRequests = append(m.pendingRequests, request)
-			}
+			m.handleIncoming(msg)
+		case request := <-m.UpdateRequest:
+			m.handleMessageRequest(request)
 		case <-receiverTimeout: // Close all receivers to prevent long poll timeouts
-			for _, request := range m.pendingRequests {
-				close(request.Receiver)
-			}
-			m.pendingRequests = make([]MessageRequest, 0)
+			m.handleTimeout()
 		}
 
 	}
 }
 
-type MessageRequest struct {
-	FirstMessage int
-	SessionID    string
-	Receiver     chan *message
+func (m *Document) handleIncoming(msg update) {
+	msg.TimeOffset = time.Since(m.StartTime)
+	msg.UpdateID = len(m.updateHistory)
+	for _, request := range m.pendingRequests {
+		request.Receiver <- &msg
+		close(request.Receiver)
+	}
+	m.pendingRequests = make([]UpdateRequest, 0)
+
+	m.updateHistory = append(m.updateHistory, msg)
 }
 
-type Session struct {
-	Id       string
-	Messages chan message
+func (m *Document) handleMessageRequest(request UpdateRequest) {
+	if request.FirstMessage < len(m.updateHistory) {
+		for _, msg := range m.updateHistory[request.FirstMessage:] {
+			msg := msg
+			request.Receiver <- &msg
+		}
+		close(request.Receiver)
+	} else {
+		m.pendingRequests = append(m.pendingRequests, request)
+	}
+}
+
+func (m *Document) handleTimeout() {
+	for _, request := range m.pendingRequests {
+		close(request.Receiver)
+	}
+	m.pendingRequests = make([]UpdateRequest, 0)
+}
+
+type UpdateRequest struct {
+	FirstMessage int
+	SessionID    string
+	Receiver     chan *update
 }
 
 type pos struct {
@@ -90,9 +90,9 @@ type delta struct {
 	Action string   `json:"action"`
 }
 
-type message struct {
+type update struct {
 	SessionID  string        `json:"sessionId"`
-	MessageID  int           `json:"messageId"`
+	UpdateID   int           `json:"messageId"`
 	TimeOffset time.Duration `json:"time"`
 	Deltas     []delta       `json:"deltas"`
 }
