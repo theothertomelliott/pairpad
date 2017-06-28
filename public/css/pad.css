@@ -24,3 +24,9 @@
 .char {
   display: inline;
 }
+
+#editor {
+    display: block;
+    width: auto;
+    height: 600;
+}

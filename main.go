@@ -30,6 +30,9 @@ func main() {
 	documents = NewDocumentPool()
 	go documents.Run()
 
+	http.HandleFunc("/chat/poll/", ChatPollResponse)
+	http.HandleFunc("/chat/push/", ChatPushHandler)
+
 	http.HandleFunc("/poll/", PollResponse)
 	http.HandleFunc("/push/", PushHandler)
 	http.HandleFunc("/doc/new", NewDocumentHandler)
@@ -173,6 +176,77 @@ func PushHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer req.Body.Close()
 	messaging.Incoming <- e
+}
+
+func ChatPollResponse(w http.ResponseWriter, req *http.Request) {
+	var err error
+	documentID := strings.Replace(req.URL.Path, "/chat/poll/", "", 1)
+	messaging, err := getDocument(documentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	req.ParseForm()
+	if s, ok := req.Form["sessionId"]; !ok || len(s) == 0 {
+		http.Error(w, "sessionId is required", http.StatusBadRequest)
+		return
+	}
+	if n, ok := req.Form["next"]; !ok || len(n) == 0 {
+		http.Error(w, "next message number is required", http.StatusBadRequest)
+		return
+	}
+
+	sessionID := req.Form["sessionId"][0]
+	nextMessageStr := req.Form["next"][0]
+	nextMessageInt, err := strconv.Atoi(nextMessageStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	receiver := make(chan *chatUpdate)
+	messaging.Chat.UpdateRequest <- ChatUpdateRequest{
+		FirstMessage: nextMessageInt,
+		SessionID:    sessionID,
+		Receiver:     receiver,
+	}
+
+	var messages []*chatUpdate
+	for msg := range receiver {
+		messages = append(messages, msg)
+	}
+
+	if len(messages) == 0 {
+		io.WriteString(w, "[]")
+		return
+	}
+
+	content, err := json.Marshal(messages)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	io.WriteString(w, string(content))
+}
+
+func ChatPushHandler(w http.ResponseWriter, req *http.Request) {
+	var err error
+	documentID := strings.Replace(req.URL.Path, "/chat/push/", "", 1)
+	messaging, err := getDocument(documentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	var e = chatUpdate{}
+	err = decoder.Decode(&e)
+	if err != nil {
+		panic(err)
+	}
+	defer req.Body.Close()
+	messaging.Chat.Incoming <- e
 }
 
 func getNewDocumentID() (string, error) {
