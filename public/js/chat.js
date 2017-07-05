@@ -17,7 +17,8 @@ $(function() {
   var $nameForm = $chat.find('#change_name');
   var $nameDisplay = $chat.find('#name_display');
   $nameForm.hide();
-  $nameDisplay.click(function(e) {
+  $nameDisplay.find('#change_name_link').click(function(e) {
+    e.preventDefault();
     $nameDisplay.hide();
     $nameForm.show();
     $nameForm.find('#new_name').val(sessionNames[sessionId]);
@@ -77,6 +78,11 @@ $(function() {
         $nameForm.hide();
       }
     });
+  });
+  $chat.find('#change_name').on('reset',function(e) {
+    e.preventDefault();
+    $nameDisplay.show();
+    $nameForm.hide();
   });
 
   var pollUpdates = function() {
