@@ -20,7 +20,7 @@
     <div class="col-md-4">
       <div id="chat" data-document="{{.DocumentId}}" data-session="{{.SessionId}}">
         <div id="name_display" class="form-group">
-          <span>Your name:</span> <span id="current_name">No Name</span> <a href="#" id="change_name_link">Change</a>
+          <span>Your name:</span> <strong><span id="current_name">No Name</span></strong> <button class="btn btn-xs btn-primary" id="change_name_link">Change</a>
         </div>
         <form class="form-inline" id="change_name">
           <div class="form-group">
@@ -29,7 +29,7 @@
             </div>
           </div>
           <button type="submit" class="btn btn-primary">Update</button>
-          <button type="reset" id="cancel" class="btn btn-primary">Cancel</button>
+          <button type="reset" id="cancel" class="btn btn-danger">Cancel</button>
         </form>
         <form class="form-inline" id="post_message">
           <div class="form-group">
