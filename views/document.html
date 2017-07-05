@@ -19,6 +19,17 @@
     </div>
     <div class="col-md-4">
       <div id="chat" data-document="{{.DocumentId}}" data-session="{{.SessionId}}">
+        <div id="name_display" class="form-group">
+          <span>Your name:</span> <span id="current_name">No Name</span>
+        </div>
+        <form class="form-inline" id="change_name">
+          <div class="form-group">
+            <div class="input-group">
+              <input type="text" class="form-control" id="new_name" placeholder="Enter your name">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </form>
         <form class="form-inline" id="post_message">
           <div class="form-group">
             <div class="input-group">
@@ -27,7 +38,11 @@
           </div>
           <button type="submit" class="btn btn-primary">Post</button>
         </form>
+        <h3>Messages</h3>
         <div id="messages">
+        </div>
+        <h3>Users</h3>
+        <div id="users">
         </div>
       </div>
     </div>
