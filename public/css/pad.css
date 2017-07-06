@@ -30,3 +30,17 @@
     width: auto;
     height: 600;
 }
+
+#messages {
+  height: 300;
+  border: 1px solid #ccc;
+  padding: 3px;
+  overflow: scroll;
+}
+
+#users {
+  height: 100;
+  border: 1px solid #ccc;
+  padding: 3px;
+  overflow: scroll;
+}
