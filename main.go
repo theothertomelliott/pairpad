@@ -37,32 +37,10 @@ func main() {
 	http.HandleFunc("/push/", PushHandler)
 	http.HandleFunc("/doc/new", NewDocumentHandler)
 	http.HandleFunc("/doc/", DocumentHandler)
-	http.HandleFunc("/", Index)
+	http.Handle("/", fileServer)
 
 	fmt.Println("Starting to listen on port", port)
 	http.ListenAndServe(":"+port, nil)
-}
-
-func Index(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		fileServer.ServeHTTP(w, r)
-		return
-	}
-
-	var err error
-	t := template.New("index.html")
-	t, err = t.ParseFiles("views/index.html")
-	if err != nil {
-		fmt.Print(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		fmt.Print(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 }
 
 func NewDocumentHandler(w http.ResponseWriter, r *http.Request) {
