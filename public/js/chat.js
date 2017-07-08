@@ -116,7 +116,9 @@ $(function() {
         var messages = [];
         for (i in events) {
           var ev = events[i];
-          messages = messages.concat(ev.messages);
+          if (ev.messages && ev.messages.length > 0) {
+            messages = messages.concat(ev.messages);
+          }
           for (key in ev.sessionNameChanges) {
             var value = ev.sessionNameChanges[key];
             sessionNames[key] = value;
