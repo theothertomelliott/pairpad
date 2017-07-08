@@ -97,6 +97,12 @@ func DocumentHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Started session: ", session.Id)
 
+	messaging.Chat.Incoming <- chatUpdate{
+		SessionNameChanges: map[string]string{
+			session.Id: fmt.Sprintf("Guest %s", session.Id),
+		},
+	}
+
 	err = t.Execute(w, map[string]interface{}{
 		"DocumentId": documentID,
 		"SessionId":  session.Id,
