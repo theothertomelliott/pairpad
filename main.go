@@ -95,7 +95,7 @@ func DocumentHandler(w http.ResponseWriter, r *http.Request) {
 
 	session := <-c
 
-	fmt.Println("Started session: ", session.Id)
+	fmt.Printf("Started session %s in document %s", session.Id, documentID)
 
 	messaging.Chat.Incoming <- chatUpdate{
 		SessionNameChanges: map[string]string{
