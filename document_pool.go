@@ -2,8 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
 )
 
 type DocumentPool struct {
@@ -24,8 +22,7 @@ func (m *DocumentPool) Run() {
 	for true {
 		select {
 		case msg := <-m.New:
-			fmt.Println("Request for new")
-			id := strconv.Itoa(len(m.messaging) + 1)
+			id := m.generateNewDocumentID()
 			messaging := NewDocument()
 			go messaging.Run()
 			m.messaging[id] = messaging
@@ -45,6 +42,16 @@ func (m *DocumentPool) Run() {
 			close(msg.Error)
 		}
 	}
+}
+
+func (m *DocumentPool) generateNewDocumentID() string {
+	var newID string
+	var exists bool = true
+	for exists {
+		newID = RandStringRunes(4)
+		_, exists = m.messaging[newID]
+	}
+	return newID
 }
 
 type NewDocumentResponse struct {
