@@ -101,16 +101,11 @@ func PollResponse(w http.ResponseWriter, req *http.Request) {
 	}
 
 	req.ParseForm()
-	if s, ok := req.Form["sessionId"]; !ok || len(s) == 0 {
-		http.Error(w, "sessionId is required", http.StatusBadRequest)
-		return
-	}
 	if n, ok := req.Form["next"]; !ok || len(n) == 0 {
 		http.Error(w, "next message number is required", http.StatusBadRequest)
 		return
 	}
 
-	sessionID := req.Form["sessionId"][0]
 	nextMessageStr := req.Form["next"][0]
 	nextMessageInt, err := strconv.Atoi(nextMessageStr)
 	if err != nil {
@@ -121,7 +116,6 @@ func PollResponse(w http.ResponseWriter, req *http.Request) {
 	receiver := make(chan *update)
 	messaging.UpdateRequest <- UpdateRequest{
 		FirstMessage: nextMessageInt,
-		SessionID:    sessionID,
 		Receiver:     receiver,
 	}
 
@@ -172,16 +166,11 @@ func ChatPollResponse(w http.ResponseWriter, req *http.Request) {
 	}
 
 	req.ParseForm()
-	if s, ok := req.Form["sessionId"]; !ok || len(s) == 0 {
-		http.Error(w, "sessionId is required", http.StatusBadRequest)
-		return
-	}
 	if n, ok := req.Form["next"]; !ok || len(n) == 0 {
 		http.Error(w, "next message number is required", http.StatusBadRequest)
 		return
 	}
 
-	sessionID := req.Form["sessionId"][0]
 	nextMessageStr := req.Form["next"][0]
 	nextMessageInt, err := strconv.Atoi(nextMessageStr)
 	if err != nil {
@@ -192,7 +181,6 @@ func ChatPollResponse(w http.ResponseWriter, req *http.Request) {
 	receiver := make(chan *chatUpdate)
 	messaging.Chat.UpdateRequest <- ChatUpdateRequest{
 		FirstMessage: nextMessageInt,
-		SessionID:    sessionID,
 		Receiver:     receiver,
 	}
 

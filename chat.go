@@ -72,7 +72,6 @@ type ChatMessage struct {
 
 type ChatUpdateRequest struct {
 	FirstMessage int
-	SessionID    string
 	Receiver     chan *chatUpdate
 }
 

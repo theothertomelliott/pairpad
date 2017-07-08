@@ -48,7 +48,6 @@ $(function() {
       url: "/poll/" + documentId,
       type: "GET",
       data: {
-        sessionId: "" + sessionId,
         next: nextMessage,
       },
       success: function(result) {

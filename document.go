@@ -76,7 +76,6 @@ func (m *Document) handleTimeout() {
 
 type UpdateRequest struct {
 	FirstMessage int
-	SessionID    string
 	Receiver     chan *update
 }
 

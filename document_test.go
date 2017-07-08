@@ -36,7 +36,6 @@ func TestMessageRequestCatchUp(t *testing.T) {
 	receiver := make(chan *update)
 	messaging.UpdateRequest <- UpdateRequest{
 		FirstMessage: 0,
-		SessionID:    "another_session",
 		Receiver:     receiver,
 	}
 
@@ -62,7 +61,6 @@ func TestMessageRequestPending(t *testing.T) {
 	receiver := make(chan *update)
 	messaging.UpdateRequest <- UpdateRequest{
 		FirstMessage: 0,
-		SessionID:    "another_session",
 		Receiver:     receiver,
 	}
 
