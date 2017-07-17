@@ -68,7 +68,7 @@ body {
 }
 
 #messages {
-  height: 300;
+  height: 225;
   border: 1px solid #ccc;
   padding: 3px;
   overflow: scroll;

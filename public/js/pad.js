@@ -15,6 +15,12 @@ $(function() {
   editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/javascript");
   var document = editor.getSession().getDocument();
+
+  var $languageSelector = $('#langSelect');
+  $languageSelector.change(function(e){
+    editor.getSession().setMode("ace/mode/" + $languageSelector.val());
+  });
+
   editor.on('change', function(e) {
     if (ignoreCount > 0) {
       ignoreCount--;
