@@ -10,7 +10,7 @@ func TestChatRequestCatchUp(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		messaging.Incoming <- chatUpdate{
-			Message: ChatMessage{
+			Message: &ChatMessage{
 				SessionID: "session",
 				Message:   "hello",
 			},
@@ -52,7 +52,7 @@ func TestChatRequestPending(t *testing.T) {
 	}
 
 	messaging.Incoming <- chatUpdate{
-		Message: ChatMessage{
+		Message: &ChatMessage{
 			SessionID: "session",
 			Message:   "hello",
 		},

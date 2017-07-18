@@ -86,7 +86,7 @@ type SetNameRequest struct {
 type chatUpdate struct {
 	UpdateID           int               `json:"messageId"`
 	Time               time.Time         `json:"time"`
-	Message            ChatMessage       `json:"message"`
-	SessionNameChanges map[string]string `json:"sessionNameChanges"`
-	SessionQuit        string            `json:"sessionQuit"`
+	Message            *ChatMessage      `json:"message,omitempty"`
+	SessionNameChanges map[string]string `json:"sessionNameChanges,omitempty"`
+	SessionQuit        string            `json:"sessionQuit,omitempty"`
 }
