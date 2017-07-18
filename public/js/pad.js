@@ -44,7 +44,7 @@ $(function() {
       type: "POST",
       data: JSON.stringify({
         sessionId: "" + sessionId,
-        deltas: [e],
+        delta: e,
       }),
       contentType: "application/json",
       complete: function(result) {
@@ -80,11 +80,10 @@ $(function() {
           if(e.sessionId == sessionId) {
             continue;
           }
-          if (e.deltas) {
-            deltas = deltas.concat(e.deltas)
+          if (e.delta) {
+            deltas.push(e.delta)
           }
           if (e.languageSelection) {
-            console.log("Setting language selection");
             editor.getSession().setMode("ace/mode/" + e.languageSelection);
             $languageSelector.val(e.languageSelection);
           }

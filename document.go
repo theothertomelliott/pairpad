@@ -95,6 +95,6 @@ type update struct {
 	SessionID          string        `json:"sessionId"`
 	UpdateID           int           `json:"messageId"`
 	TimeOffset         time.Duration `json:"time"`
-	Deltas             []delta       `json:"deltas"`
+	Delta              delta         `json:"delta"`
 	LanguageSelections string        `json:"languageSelection"`
 }
