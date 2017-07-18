@@ -10,11 +10,9 @@ func TestChatRequestCatchUp(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		messaging.Incoming <- chatUpdate{
-			Messages: []ChatMessage{
-				ChatMessage{
-					SessionID: "session",
-					Message:   "hello",
-				},
+			Message: ChatMessage{
+				SessionID: "session",
+				Message:   "hello",
 			},
 		}
 	}
@@ -27,11 +25,11 @@ func TestChatRequestCatchUp(t *testing.T) {
 
 	var count int
 	for m := range receiver {
-		if m.Messages[0].SessionID != "session" {
-			t.Error("SessionId not as expected:", m.Messages[0].SessionID)
+		if m.Message.SessionID != "session" {
+			t.Error("SessionId not as expected:", m.Message.SessionID)
 		}
-		if m.Messages[0].Message != "hello" {
-			t.Error("Message not as expected:", m.Messages[0].Message)
+		if m.Message.Message != "hello" {
+			t.Error("Message not as expected:", m.Message.Message)
 		}
 		if m.UpdateID != count {
 			t.Error("UpdateID not as expected:", m.UpdateID)
@@ -54,21 +52,19 @@ func TestChatRequestPending(t *testing.T) {
 	}
 
 	messaging.Incoming <- chatUpdate{
-		Messages: []ChatMessage{
-			ChatMessage{
-				SessionID: "session",
-				Message:   "hello",
-			},
+		Message: ChatMessage{
+			SessionID: "session",
+			Message:   "hello",
 		},
 	}
 
 	var count int
 	for m := range receiver {
-		if m.Messages[0].SessionID != "session" {
-			t.Error("SessionId not as expected:", m.Messages[0].SessionID)
+		if m.Message.SessionID != "session" {
+			t.Error("SessionId not as expected:", m.Message.SessionID)
 		}
-		if m.Messages[0].Message != "hello" {
-			t.Error("Message not as expected:", m.Messages[0].Message)
+		if m.Message.Message != "hello" {
+			t.Error("Message not as expected:", m.Message.Message)
 		}
 		if m.UpdateID != count {
 			t.Error("UpdateID not as expected:", m.UpdateID)

@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 type Chat struct {
 	sessionNames map[string]string
@@ -84,7 +86,7 @@ type SetNameRequest struct {
 type chatUpdate struct {
 	UpdateID           int               `json:"messageId"`
 	Time               time.Time         `json:"time"`
-	Messages           []ChatMessage     `json:"messages"`
+	Message            ChatMessage       `json:"message"`
 	SessionNameChanges map[string]string `json:"sessionNameChanges"`
-	SessionsQuit       []string          `json:"sessionsQuit"`
+	SessionQuit        string            `json:"sessionQuit"`
 }

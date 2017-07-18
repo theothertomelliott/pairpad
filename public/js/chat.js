@@ -62,10 +62,10 @@ $(function() {
       url: "/chat/push/" + documentId,
       type: "POST",
       data: JSON.stringify({
-        messages: [{
+        message: {
           sessionId: "" + sessionId,
           message: msg
-        }],
+        },
       }),
       contentType: "application/json",
       complete: function(result) {
@@ -115,8 +115,8 @@ $(function() {
         var messages = [];
         for (i in events) {
           var ev = events[i];
-          if (ev.messages && ev.messages.length > 0) {
-            messages = messages.concat(ev.messages);
+          if (ev.message) {
+            messages.push(ev.message);
           }
           for (key in ev.sessionNameChanges) {
             var value = ev.sessionNameChanges[key];
