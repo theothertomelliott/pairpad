@@ -19,6 +19,18 @@ $(function() {
   var $languageSelector = $('#langSelect');
   $languageSelector.change(function(e){
     editor.getSession().setMode("ace/mode/" + $languageSelector.val());
+    $.ajax({
+      url: "/push/" + documentId,
+      type: "POST",
+      data: JSON.stringify({
+        sessionId: "" + sessionId,
+        languageSelection: $languageSelector.val(),
+      }),
+      contentType: "application/json",
+      complete: function(result) {
+        // TODO: Handle the response
+      }
+    });
   });
 
   editor.on('change', function(e) {
@@ -68,7 +80,14 @@ $(function() {
           if(e.sessionId == sessionId) {
             continue;
           }
-          deltas = deltas.concat(e.deltas)
+          if (e.deltas) {
+            deltas = deltas.concat(e.deltas)
+          }
+          if (e.languageSelection) {
+            console.log("Setting language selection");
+            editor.getSession().setMode("ace/mode/" + e.languageSelection);
+            $languageSelector.val(e.languageSelection);
+          }
         }
         ignoreCount = deltas.length;
         document.applyDeltas(deltas)

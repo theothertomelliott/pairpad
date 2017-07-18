@@ -92,8 +92,9 @@ type delta struct {
 }
 
 type update struct {
-	SessionID  string        `json:"sessionId"`
-	UpdateID   int           `json:"messageId"`
-	TimeOffset time.Duration `json:"time"`
-	Deltas     []delta       `json:"deltas"`
+	SessionID          string        `json:"sessionId"`
+	UpdateID           int           `json:"messageId"`
+	TimeOffset         time.Duration `json:"time"`
+	Deltas             []delta       `json:"deltas"`
+	LanguageSelections string        `json:"languageSelection"`
 }
